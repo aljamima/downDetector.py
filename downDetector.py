@@ -1,10 +1,15 @@
 #!/usr/bin/python3
+
 import time
 import socket
 import subprocess as s
 import time
-
+from datetime import datetime
+import _thread
+#import threading
+#from threading import Thread
 ### CONSTS ###
+now_UTC = datetime.utcnow() # Get the UTC time
 starttime=time.time()
 ip_dict = {
     "zoomhash.io" : 0,
@@ -12,10 +17,10 @@ ip_dict = {
     "entiat.ddns.net" : 0,
     "quincy.ddns.net" : 0,
     "columbia.ddns.net" : 0,
-    "10.100.0.79" : 0
+    "10.2.1.163" : 0
 }    
 
-def try_port_22(ip_address, count):
+def try_port_22(ip_address):
     # Start socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Force socket to connect to TCP port
@@ -38,6 +43,7 @@ def try_port_22(ip_address, count):
         print ('Looks Like ' + ip_address + ' is OK')
         return True
     s.close()
+    
 def send_message_to_slack(text):
     from urllib import request, parse
     import json
@@ -53,15 +59,30 @@ def send_message_to_slack(text):
     except Exception as em:
         print("EXCEPTION: " + str(em))
 
+def are_you_up(ip_address):
+    control = False
+    while control == False:
+        ip_dict[ip_address] = 0
+        print('hi from the inside')
+        time.sleep(5)
+        if try_port_22(ip_address) == True:
+            send_message_to_slack('Ping Is Back UP For: ' + ip_address)
+            control = True
+    return 0
+
 while True:
     for ip, count in ip_dict.items():
-        if try_port_22(ip, count) == False:
+        if try_port_22(ip) == False:
             ip_dict[ip] += 1
             if ip_dict[ip] > 2:
                 send_message_to_slack('Theres An Outage At ' + ip + ' Site')
                 ip_dict[ip] = 0
-    time.sleep(60)
+                _thread.start_new_thread( are_you_up, (ip, ) )
+        else:
+            ip_dict[ip] = 0
+    time.sleep(30)
     if now_UTC.minute > 59:
         for each in ip_dict:
             ip_dict[each] = 0
-time.sleep(60.0 - ((time.time() - starttime) % 60.0))
+
+#time.sleep(60.0 - ((time.time() - starttime) % 60.0))
