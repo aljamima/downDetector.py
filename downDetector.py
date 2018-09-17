@@ -16,8 +16,7 @@ ip_dict = {
     "airportshops.ddns.net" : 0,
     "entiat.ddns.net" : 0,
     "quincy.ddns.net" : 0,
-    "columbia.ddns.net" : 0,
-    "10.2.1.163" : 0
+    "columbia.ddns.net" : 0
 }    
 
 def try_port_22(ip_address):
