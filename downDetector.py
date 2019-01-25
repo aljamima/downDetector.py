@@ -6,20 +6,26 @@ import subprocess as s
 import time
 from datetime import datetime
 import _thread
-#import threading
-#from threading import Thread
-### CONSTS ###
+
 now_UTC = datetime.utcnow() # Get the UTC time
 starttime=time.time()
 ip_dict = {
     "zoomhash.io" : 0,
     "airportshops.ddns.net" : 0,
     "entiat.ddns.net" : 0,
-    "quincy.ddns.net" : 0,
+    "division.ddns.net" : 0,
     "columbia.ddns.net" : 0
+}    
+port_dict = {
+    "zoomhash.io" : 80,
+    "airportshops.ddns.net" : 22,
+    "entiat.ddns.net" : 22,
+    "division.ddns.net" : 710,
+    "columbia.ddns.net" : 710
 }    
 
 def try_port_22(ip_address):
+    port = port_dict[ip_address]
     # Start socket
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # Force socket to connect to TCP port
@@ -27,10 +33,10 @@ def try_port_22(ip_address):
     # set the timeout to .2 seconds
     s.settimeout(0.2)
     try:
-        s.connect((ip_address, 22))
+        s.connect((ip_address, port))
     except socket.timeout:
     # Timed out
-        print("TIMEOUT FOR: " + ip_address)
+        print("TIMEOUT FOR: " + ip_address + str(port))
         s.close()
         return False
     except socket.error:
@@ -39,7 +45,7 @@ def try_port_22(ip_address):
         s.close()
         return False
     else:
-        print ('Looks Like ' + ip_address + ' is OK')
+        print ('Looks Like ' + ip_address + str(port) + ' is OK')
         return True
     s.close()
     
@@ -62,10 +68,9 @@ def are_you_up(ip_address):
     control = False
     while control == False:
         ip_dict[ip_address] = 0
-        print('hi from the inside')
         time.sleep(5)
         if try_port_22(ip_address) == True:
-            send_message_to_slack('Ping Is Back UP For: ' + ip_address)
+            send_message_to_slack(now_UTC + '--Ping Is Back UP For: ' + ip_address)
             control = True
     return 0
 
@@ -74,7 +79,7 @@ while True:
         if try_port_22(ip) == False:
             ip_dict[ip] += 1
             if ip_dict[ip] > 2:
-                send_message_to_slack('Theres An Outage At ' + ip + ' Site')
+                send_message_to_slack(now_UTC + '--Theres An Outage At ' + ip + ' Site' + 'port: ' + port_dict[ip])
                 ip_dict[ip] = 0
                 _thread.start_new_thread( are_you_up, (ip, ) )
         else:
